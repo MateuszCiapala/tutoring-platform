@@ -1,9 +1,11 @@
 package pl.simpleascoding.tutoringplatform.service.user;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ import pl.simpleascoding.tutoringplatform.repository.TokenRepository;
 import pl.simpleascoding.tutoringplatform.repository.UserRepository;
 
 @Service
+@Primary
 @RequiredArgsConstructor
 class UserServiceImpl implements UserService {
 
@@ -32,6 +35,8 @@ class UserServiceImpl implements UserService {
     private static final String CONFIRM_REGISTER_MAIL_SUBJECT = "Confirm your email";
     private static final String CONFIRM_REGISTER_MAIL_TEXT = "Hi %s, please visit the link below to confirm your email address and activate your account: \n%s";
     private static final String CONFIRM_REGISTER_URL = "%s/confirm-registration?tokenValue=%s";
+
+    private static final String USER_NOT_FOUND_MSG = "User with \"%s\" username, has not been found";
 
     @Override
     @Transactional
@@ -108,6 +113,11 @@ class UserServiceImpl implements UserService {
         } else {
             return HttpStatus.UNAUTHORIZED.getReasonPhrase();
         }
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        return userRepository.findUserByUsername(username).orElseThrow(() -> new UsernameNotFoundException(String.format(USER_NOT_FOUND_MSG, username)));
     }
 
     private boolean isChangeAllowed(String passwordFromEntity, ChangeUserPasswordDTO newData) {
